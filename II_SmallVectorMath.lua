@@ -63,7 +63,17 @@ function IIVector (x, y, z)
         magnitude = function (self)
             return (self[1]^2 + self[2]^2 + self[3]^2)^0.5
         end,
-        ---@endsection magnitude
+        ---@endsection
+
+        ---@section distanceTo
+        ---Gets the distance of the vector to another
+        ---@param self IIVector
+        ---@param other IIVector
+        ---@return number distance
+        distanceTo = function (self, other)
+            return ((self[1] - other[1])^2 + (self[2] - other[2])^2 + (self[3] - other[3])^2)^0.5
+        end,
+        ---@endsection
 
         ---@section toCartesian
         ---Converts the vector from the form (magnitude, yaw, pitch) to (x, y, z)
