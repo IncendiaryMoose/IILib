@@ -20,7 +20,7 @@ end
 ---@section floatToBinary
 function floatToBinary(float, exponentBits, mantissaBits, bias, unsigned)
     local exponent = IIfloor(IIlog(IIabs(float), 2))
-    return IImax(exponent + bias, 0) << mantissaBits | (float > 0 or unsigned and 0 or 1 << mantissaBits + exponentBits) | IIfloor((IIabs(float) / 2 ^ IImax(exponent, -bias + 1))%1 * 2^mantissaBits + 0.5)
+    return IImax(exponent + bias, 0) << mantissaBits | ((float > 0 or unsigned) and 0 or 1 << mantissaBits + exponentBits) | IIfloor((IIabs(float) / 2 ^ IImax(exponent, -bias + 1))%1 * 2^mantissaBits + 0.5)
 end
 ---@endsection
 
