@@ -52,8 +52,8 @@ end
 ---@param float number A 32-bit float.
 ---@return integer binary The binary representation of the input float, stored as an integer.
 function inputToBinary(float)
-    local exponent = IIfloor(IIlog(IIabs(float), 2))
-    return IImax(exponent + 127, 0) << 23 | ((float < 0 or (float == 0 and #tostring(float) == 4)) and 1 << 31 or 0) | IIfloor((IIabs(float) / 2 ^ IImax(exponent, -126))%1 * 2^23 + 0.5)
+    local exponent = IIfloor(IIlog(IIabs(float), 2) + 0.00000001) -- Very small offset is to fix rounding error.
+    return IImax(exponent + 127, 0) << 23 | ((float < 0 or (float == 0 and #tostring(float) == 4)) and 1 << 31 or 0) | IIfloor(IIabs(float) / 2 ^ IImax(exponent, -126)%1 * 2^23 + 0.5)
 end
 ---@endsection
 
