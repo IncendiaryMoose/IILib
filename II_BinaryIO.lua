@@ -7,6 +7,30 @@
 
 require('II_MathHelpers')
 
+---@section floatToInteger
+---Converts a float to an integer factor of itself.
+---@param float number Any number.
+---@param minInput number The smallest expected float.
+---@param inputRange number The expected range of the input.
+---@param maxInteger integer The maximum integer to output. Resolution is inputRange/maxInteger.
+---@return integer factor
+function floatToInteger(float, minInput, inputRange, maxInteger)
+    return IIfloor((clamp((float - minInput) / inputRange, 0, 1)) * maxInteger + 0.5)
+end
+---@endsection
+
+---@section integerToFloat
+---Converts an integer to a float using itself as a factor.
+---@param integer integer Any integer.
+---@param minInput number The smallest expected float.
+---@param inputRange number The expected range of the input.
+---@param maxInteger integer The maximum integer to output. Resolution is inputRange/maxInteger.
+---@return integer factor
+function integerToFloat(integer, minInput, inputRange, maxInteger)
+    return integer / maxInteger * inputRange + minInput
+end
+---@endsection
+
 ---@section binaryToOutput
 ---Converts an integer into a 32-bit float with the same binary representation.
 ---@param binary integer An integer containing the binary to encode.
@@ -43,7 +67,7 @@ end
 ---@return number decodedFloat The closest possible 64-bit float to the float created using the input standard.
 function binaryToFloat(binary, exponentBits, mantissaBits, bias, unsigned)
     local exponent = binary >> mantissaBits & 2^exponentBits - 1
-    return ((2^mantissaBits - 1 & binary) / 2^mantissaBits + (exponent > 0 and 1 or 0)) * 2 ^ IImax(exponent - bias, -bias + 1) * (unsigned or binary < 1 << exponentBits + mantissaBits ~ binary and 1 or -1)
+    return ((2^mantissaBits - 1 & binary) / 2^mantissaBits + (exponent > 0 and 1 or 0)) * 2 ^ IImax(exponent - bias, -bias + 1) * ((unsigned or (binary < 1 << exponentBits + mantissaBits ~ binary)) and 1 or -1)
 end
 ---@endsection
 
@@ -67,7 +91,9 @@ function stringTo6BitInts(str, startChar, endChar)
     local encodedString = 0
     for i = startChar, endChar do
         local int6 = str:byte(i)
-        encodedString = encodedString << 6 | (int6 == 95 and 36 or int6 < 58 and int6 - 48 or int6 < 91 and int6 - 55 or int6 - 60)
+        if int6 then
+            encodedString = encodedString << 6 | (int6 == 95 and 37 or int6 < 58 and int6 - 47 or int6 < 90 and int6 - 54 or int6 - 59)
+        end
     end
     return encodedString
 end
@@ -81,7 +107,9 @@ function int30ToString(int30)
     local decodedString = ''
     for i = 4, 0, -1 do
         local int6 = int30 >> i*6 & 2^6 - 1
-        decodedString = decodedString..string.char(int6 == 36 and 95 or int6 < 10 and int6 + 48 or int6 < 36 and int6 + 55 or int6 + 60)
+        if int6 ~= 0 then
+            decodedString = decodedString..string.char(int6 == 37 and 95 or int6 < 11 and int6 + 47 or int6 < 37 and int6 + 54 or int6 + 59)
+        end
     end
     return decodedString
 end
