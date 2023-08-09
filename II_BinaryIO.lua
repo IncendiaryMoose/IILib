@@ -15,7 +15,7 @@ require('II_MathHelpers')
 ---@param maxInteger integer The maximum integer to output. Resolution is inputRange/maxInteger.
 ---@return integer factor
 function floatToInteger(float, minInput, inputRange, maxInteger)
-    return IIfloor((clamp((float - minInput) / inputRange, 0, 1)) * maxInteger + 0.5)
+    return IIfloor(clamp((float - minInput) / inputRange, 0, 1) * maxInteger + 0.5)
 end
 ---@endsection
 
@@ -72,12 +72,13 @@ end
 ---@endsection
 
 ---@section inputToBinary
----Converts a 32-bit float into an integer with the same binary representation.
----@param float number A 32-bit float.
+---Converts an input channel into an integer with the same binary representation.
+---@param channel integer The channel to read from.
 ---@return integer binary The binary representation of the input float, stored as an integer.
-function inputToBinary(float)
+function inputToBinary(channel)
+    local float = input.getNumber(channel)
     local exponent = IIfloor(IIlog(IIabs(float), 2) + 0.00000001) -- Very small offset is to fix rounding error.
-    return IImax(exponent + 127, 0) << 23 | ((float < 0 or (float == 0 and #tostring(float) == 4)) and 1 << 31 or 0) | IIfloor(IIabs(float) / 2 ^ IImax(exponent, -126)%1 * 2^23 + 0.5)
+    return IIfloor(IIabs(float) * 2 ^ IImin(23 - exponent, 149) + 0.5) & 8388607 | IImax(exponent + 127, 0) << 23 | (1/float < 0 and 1 << 31 or 0)
 end
 ---@endsection
 

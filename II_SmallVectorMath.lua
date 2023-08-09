@@ -6,7 +6,6 @@
 --- If you have any issues, please report them here: https://github.com/nameouschangey/STORMWORKS_VSCodeExtension/issues - by Nameous Changey
 
 require('II_MathHelpers')
-require('II_Tables')
 
 ---@section IIVector 1 IIVECTORCLASS
 ---@class IIVector
@@ -79,7 +78,7 @@ function IIVector (x, y, z)
         ---Converts the vector from the form (magnitude, yaw, pitch) to (x, y, z)
         ---@param self IIVector
         toCartesian = function (self)
-            self:setVector(self[1] * math.sin(self[2]) * math.cos(self[3]), self[1] * math.cos(self[2]) * math.cos(self[3]), self[1] * math.sin(self[3]))
+            self:setVector(self[1] * math.cos(self[2]) * math.cos(self[3]), self[1] * math.sin(self[2]) * math.cos(self[3]), self[1] * math.sin(self[3]))
         end,
         ---@endsection
 
