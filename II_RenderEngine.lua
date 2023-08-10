@@ -33,14 +33,13 @@ function newButton(x, y, w, h, boxColor, textColor, text, boxPushColor, textPush
         textPushColor = textPushColor or textColor,
         pressed = false,
         poked = false,
-        updateTick = function (self, clicked, wasClicked, clickX, clickY)
+        update = function (self, clicked, wasClicked, clickX, clickY)
             self.poked = not self.pressed
             if clicked and not wasClicked and inRect(clickX, clickY, self.x, self.y, self.w - 1, self.h - 1) then
                 self.pressed = not self.pressed
             end
             self.poked = self.poked and self.pressed
-        end,
-        updateDraw = function (self)
+
             local boxColorToDraw, textColorToDraw = self.boxColor, self.textColor
             if self.pressed then
                 boxColorToDraw = self.boxPushColor
@@ -69,10 +68,9 @@ function newPulseButton(x, y, w, h, boxColor, textColor, text, boxPushColor, tex
         boxPushColor = boxPushColor or boxColor,
         textPushColor = textPushColor or textColor,
         pressed = false,
-        updateTick = function (self, clicked, wasClicked, clickX, clickY)
+        update = function (self, clicked, wasClicked, clickX, clickY)
             self.pressed = clicked and not wasClicked and inRect(clickX, clickY, self.x, self.y, self.w - 1, self.h - 1)
-        end,
-        updateDraw = function (self)
+
             local boxColorToDraw, textColorToDraw = self.boxColor, self.textColor
             if self.pressed then
                 boxColorToDraw = self.boxPushColor
@@ -107,7 +105,7 @@ function newSlider(x, y, w, h, sW, tW, sliderColor, textColor, text, onColor, of
         onPercent = 0,
         stateChange = false,
         slider = slider,
-        updateTick = function (self, clicked, wasClicked, clickX, clickY)
+        update = function (self, clicked, wasClicked, clickX, clickY)
             local priorState = self.pressed
             if self.slider then
                 self.pressed = clicked and inRect(clickX, clickY, self.x1, self.y, self.w, self.h)
@@ -116,8 +114,7 @@ function newSlider(x, y, w, h, sW, tW, sliderColor, textColor, text, onColor, of
             end
             self.stateChange = priorState ~= self.pressed
             self.onPercent = clamp((self.slider and (self.pressed and ((clickX - self.x1 - self.sW/2)/(self.w-3)) or self.onPercent)) or (self.pressed and self.onPercent + 0.1) or (self.onPercent - 0.1), 0, 1)
-        end,
-        updateDraw = function (self)
+
             setDrawColor(whiteOn)
             screen.drawRect(self.x1, self.y + 2, self.w, self.h - 4)
             setDrawColor(self.offColor)
