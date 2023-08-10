@@ -65,20 +65,21 @@ end
 ---@endsection
 
 function newtonMethod(initialVelocity, targetPosition, currentIteration)
-    local targetX, targetY, targetZ, Z2 = targetPosition[1], targetPosition[2], targetPosition[3], TERMINAL_VELOCITY[3] - initialVelocity[3]
+    local targetX, targetY, targetZ, Z2, E, EPrime, Z, IV2, IV, F, FPrime = targetPosition[1], targetPosition[2], targetPosition[3], TERMINAL_VELOCITY[3] - initialVelocity[3]
     for i = 1, 5 do
         -- TODO: Early break if second attempt is further than first, and either try a different start or quit
-        local E, EPrime, Z, IV2 = 1 - e^(-DRAG * currentIteration), DRAG * e^(-DRAG * currentIteration), targetZ - currentIteration * TERMINAL_VELOCITY[3], MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2
-        local IV = 2 * DRAG * (targetY * initialVelocity[2] + targetX * initialVelocity[1] - Z * Z2)
+        E, EPrime, Z, IV2 = 1 - e^(-DRAG * currentIteration), DRAG * e^(-DRAG * currentIteration), targetZ - currentIteration * TERMINAL_VELOCITY[3], MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2
+        IV = 2 * DRAG * (targetY * initialVelocity[2] + targetX * initialVelocity[1] - Z * Z2)
 
-        local F = E^2 * IV2 + E * IV - DRAG^2 * (targetX^2 + targetY^2 + Z^2)
+        F = E^2 * IV2 + E * IV - DRAG^2 * (targetX^2 + targetY^2 + Z^2)
 
-        local FPrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
+        FPrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
 
         currentIteration = currentIteration - F / FPrime
     end
-    local E = 1 - e^(-DRAG * currentIteration)
-    local turretPitch = arcsin((DRAG * (targetZ - currentIteration * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E) + (TERMINAL_VELOCITY[3] - initialVelocity[3]) / MUZZLE_VELOCITY)
-    local turretYaw = math.atan(DRAG * targetY / E - initialVelocity[2], DRAG * targetX / E - initialVelocity[1])
-    return turretPitch, turretYaw, currentIteration
+    E = 1 - e^(-DRAG * currentIteration)
+    return
+        arcsin((DRAG * (targetZ - currentIteration * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E) + (TERMINAL_VELOCITY[3] - initialVelocity[3]) / MUZZLE_VELOCITY),
+        math.atan(DRAG * targetY / E - initialVelocity[2], DRAG * targetX / E - initialVelocity[1]),
+        currentIteration
 end
