@@ -94,13 +94,12 @@ function newtonMethodBallistics(initialVelocity, target, predictedTime)
             azimuthDifferencePrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
 
             -- Newton's method. The next guess is equal to the first guess, offset in the direction the graph is going. This results in the next guess resulting in a number closer to 0 than the current one.
-            local newGuess = predictedTime - azimuthDifference / azimuthDifferencePrime
+            predictedTime = predictedTime - azimuthDifference / azimuthDifferencePrime
 
-            if predictedTime > LIFESPAN or newGuess < 0 or IIabs(azimuthDifference) > IIabs(previousAzimuthDifference) then
+            if predictedTime > LIFESPAN or predictedTime < 0 or IIabs(azimuthDifference) > IIabs(previousAzimuthDifference) then
                 -- The prediction system is not going to find a solution, so don't waste time trying.
                 return 0, 0, 0
             end
-            predictedTime = predictedTime - azimuthDifference / azimuthDifferencePrime
         end
     end
     E = 1 - e^(-DRAG * predictedTime)
