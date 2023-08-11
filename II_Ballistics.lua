@@ -75,7 +75,7 @@ end
 ---@param predictedTime number The predicted time, in ticks, that will pass between firing the bullet and hitting the target.
 ---@return number turretElevation The elevation, in world-space radians, of the turret that will be needed to hit the target. 0 is horizontal.
 ---@return number turretAzimuth The azimuth (yaw), in world-space radians, of the turret that will be needed to hit the target. 0 is east.
----@return number nextGuess The next guess for the predicted time. Typically it will be 2 digits closer than the previous guess.
+---@return number flightTime The predicted flight time of the bullet.
 function newtonMethodBallistics(initialVelocity, target, predictedTime)
     local Z2, azimuthDifference, previousAzimuthDifference, azimuthDifferencePrime, E, EPrime, Z, IV2, IV = TERMINAL_VELOCITY[3] - initialVelocity[3], 7
     for j = 1, 8 do
