@@ -64,22 +64,50 @@ function newBullet(initialPosition, initialVelocity)
 end
 ---@endsection
 
-function newtonMethod(initialVelocity, targetPosition, currentIteration)
-    local targetX, targetY, targetZ, Z2, E, EPrime, Z, IV2, IV, F, FPrime = targetPosition[1], targetPosition[2], targetPosition[3], TERMINAL_VELOCITY[3] - initialVelocity[3]
-    for i = 1, 5 do
-        -- TODO: Early break if second attempt is further than first, and either try a different start or quit
-        E, EPrime, Z, IV2 = 1 - e^(-DRAG * currentIteration), DRAG * e^(-DRAG * currentIteration), targetZ - currentIteration * TERMINAL_VELOCITY[3], MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2
-        IV = 2 * DRAG * (targetY * initialVelocity[2] + targetX * initialVelocity[1] - Z * Z2)
+---@section newtonMethodBallistics
+--- There are 3 possible solutions to the equation.
+--- There is the correct solution, the 'mortar' solution, and the firing the bullet in reverse solution.
+--- The reverse solution can be filtered out by checking if the result is negative
+--- The mortar solution is mostly a non-issue, as it will not be reached in normal situations.
+--- Even if the solver arrives at the mortar solution, the bullet will still hit.
+---@param initialVelocity IIVector The velocity of the turret in world-space. The bullet will inherit this velocity when fired, so it needs to be accounted for.
+---@param target table The target to hit. Must include a positionInTicks() function and a predictedPosition IIVector
+---@param predictedTime number The predicted time, in ticks, that will pass between firing the bullet and hitting the target.
+---@return number turretElevation The elevation, in world-space radians, of the turret that will be needed to hit the target. 0 is horizontal.
+---@return number turretAzimuth The azimuth (yaw), in world-space radians, of the turret that will be needed to hit the target. 0 is east.
+---@return number nextGuess The next guess for the predicted time. Typically it will be 2 digits closer than the previous guess.
+function newtonMethodBallistics(initialVelocity, target, predictedTime)
+    local Z2, azimuthDifference, previousAzimuthDifference, azimuthDifferencePrime, E, EPrime, Z, IV2, IV = TERMINAL_VELOCITY[3] - initialVelocity[3], 7
+    for j = 1, 8 do
+        -- Find where the target is probably going to be when the bullet lands
+        target:positionInTicks(predictedTime)
+        for i = 1, 5 do
+            -- Find what time the bullet will actually hit that location
+            E, EPrime, Z, IV2 = 1 - e^(-DRAG * predictedTime), DRAG * e^(-DRAG * predictedTime), target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3], MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2
+            IV = 2 * DRAG * (target.predictedPosition[2] * initialVelocity[2] + target.predictedPosition[1] * initialVelocity[1] - Z * Z2)
 
-        F = E^2 * IV2 + E * IV - DRAG^2 * (targetX^2 + targetY^2 + Z^2)
+            previousAzimuthDifference = azimuthDifference
+            -- This equation returns the difference between the azimuth angle calculated using the given time in the X-Z plane and the X-Y plane.
+            azimuthDifference = E^2 * IV2 + E * IV - DRAG^2 * (target.predictedPosition[1]^2 + target.predictedPosition[2]^2 + Z^2)
 
-        FPrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
+            -- This is the derivative of the previous equation. This is required for newton's method.
+            azimuthDifferencePrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
 
-        currentIteration = currentIteration - F / FPrime
+            -- Newton's method. The next guess is equal to the first guess, offset in the direction the graph is going. This results in the next guess resulting in a number closer to 0 than the current one.
+            local newGuess = predictedTime - azimuthDifference / azimuthDifferencePrime
+
+            if predictedTime > LIFESPAN or newGuess < 0 or IIabs(azimuthDifference) > IIabs(previousAzimuthDifference) then
+                -- The prediction system is not going to find a solution, so don't waste time trying.
+                return 0, 0, 0
+            end
+            predictedTime = predictedTime - azimuthDifference / azimuthDifferencePrime
+        end
     end
-    E = 1 - e^(-DRAG * currentIteration)
+    E = 1 - e^(-DRAG * predictedTime)
     return
-        arcsin((DRAG * (targetZ - currentIteration * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E) + (TERMINAL_VELOCITY[3] - initialVelocity[3]) / MUZZLE_VELOCITY),
-        math.atan(DRAG * targetY / E - initialVelocity[2], DRAG * targetX / E - initialVelocity[1]),
-        currentIteration
+        -- Compute elevation and azimuth angles based on the predictedTime
+        arcsin((DRAG * (target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E) + (TERMINAL_VELOCITY[3] - initialVelocity[3]) / MUZZLE_VELOCITY),
+        math.atan(DRAG * target.predictedPosition[2] / E - initialVelocity[2], DRAG * target.predictedPosition[1] / E - initialVelocity[1]),
+        predictedTime
 end
+---@endsection
