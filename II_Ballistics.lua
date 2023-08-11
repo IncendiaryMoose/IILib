@@ -87,7 +87,7 @@ function newtonMethodBallistics(initialVelocity, target, predictedTime)
             IV = 2 * DRAG * (target.predictedPosition[2] * initialVelocity[2] + target.predictedPosition[1] * initialVelocity[1] - Z * Z2)
 
             previousAzimuthDifference = azimuthDifference
-            -- This equation returns the difference between the azimuth angle calculated using the given time in the X-Z plane and the X-Y plane.
+            -- This equation returns the difference between the azimuth angle calculated using the given time in the X-Z plane and the Y-Z plane.
             azimuthDifference = E^2 * IV2 + E * IV - DRAG^2 * (target.predictedPosition[1]^2 + target.predictedPosition[2]^2 + Z^2)
 
             -- This is the derivative of the previous equation. This is required for newton's method.
