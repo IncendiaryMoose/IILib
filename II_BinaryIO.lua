@@ -19,6 +19,18 @@ function floatToInteger(float, minInput, inputRange, maxInteger)
 end
 ---@endsection
 
+---@section fastFloatToInteger
+---Converts a float to an integer factor of itself. Avoids using division.
+---@param float number Any number.
+---@param minInput number The smallest expected float.
+---@param conversionRatio number Float equal to (1 / inputRange * maxInteger)
+---@param maxInteger integer The maximum integer to output. Resolution is inputRange/maxInteger.
+---@return integer factor
+function fastFloatToInteger(float, minInput, conversionRatio, maxInteger)
+    return clamp(IIfloor((float - minInput) * conversionRatio + 0.5), 0, maxInteger)
+end
+---@endsection
+
 ---@section integerToFloat
 ---Converts an integer to a float using itself as a factor.
 ---@param integer integer Any integer.
@@ -28,6 +40,37 @@ end
 ---@return integer factor
 function integerToFloat(integer, minInput, inputRange, maxInteger)
     return integer / maxInteger * inputRange + minInput
+end
+---@endsection
+
+---@section fastIntegerToFloat
+---Converts an integer to a float using itself as a factor.
+---@param integer integer Any integer.
+---@param minInput number The smallest expected float.
+---@param conversionRatio number Float equal to (1 / maxInteger * inputRange)
+---@return integer factor
+function fastIntegerToFloat(integer, minInput, conversionRatio)
+    return integer * conversionRatio + minInput
+end
+---@endsection
+
+---@section checkBit
+---Checks if the bit at the given location is set
+---@param integer integer The integer to check the bits from.
+---@param bit integer The bit to check, with 1 being the rightmost bit.
+---@return boolean isBitSet True if the bit is 1, false if it is 0.
+function checkBit(integer, bit)
+    return integer >> (bit - 1) & 1 == 1
+end
+---@endsection
+
+---@section setBit
+---Sets a bit in a given integer at a given location
+---@param integer integer The integer to set the bits from.
+---@param bit integer The bit to set, with 1 being the rightmost bit.
+---@return integer integer The input, with the given bit set.
+function setBit(integer, bit)
+    return integer | (1 << (bit - 1))
 end
 ---@endsection
 

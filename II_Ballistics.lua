@@ -77,21 +77,28 @@ end
 ---@return number turretAzimuth The azimuth (yaw), in world-space radians, of the turret that will be needed to hit the target. 0 is east.
 ---@return number flightTime The predicted flight time of the bullet.
 function newtonMethodBallistics(initialVelocity, target, predictedTime)
-    local Z2, azimuthDifference, previousAzimuthDifference, azimuthDifferencePrime, E, EPrime, Z, IV2, IV = TERMINAL_VELOCITY[3] - initialVelocity[3], 7
+    local Z2, azimuthDifference, previousAzimuthDifference, azimuthDifferencePrime, E, E1, Z, IV
+    Z2 = TERMINAL_VELOCITY[3] - initialVelocity[3]
     for j = 1, 8 do
         -- Find where the target is probably going to be when the bullet lands
         target:positionInTicks(predictedTime)
+
+        -- Reset azimuthDifference to avoid false positive on the early return
+        azimuthDifference = 7
+
+        -- Find what time the bullet will actually hit that location
         for i = 1, 5 do
-            -- Find what time the bullet will actually hit that location
-            E, EPrime, Z, IV2 = 1 - e^(-DRAG * predictedTime), DRAG * e^(-DRAG * predictedTime), target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3], MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2
-            IV = 2 * DRAG * (target.predictedPosition[2] * initialVelocity[2] + target.predictedPosition[1] * initialVelocity[1] - Z * Z2)
+            E = e^(-DRAG * predictedTime)
+            E1 = 1 - E
+            Z = target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3]
+            IV = E1 * (MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2) + 2 * DRAG * (target.predictedPosition[2] * initialVelocity[2] + target.predictedPosition[1] * initialVelocity[1] - Z * Z2)
 
             previousAzimuthDifference = azimuthDifference
             -- This equation returns the difference between the azimuth angle calculated using the given time in the X-Z plane and the Y-Z plane.
-            azimuthDifference = E^2 * IV2 + E * IV - DRAG^2 * (target.predictedPosition[1]^2 + target.predictedPosition[2]^2 + Z^2)
+            azimuthDifference = E1 * IV - DRAG^2 * (target.predictedPosition[1]^2 + target.predictedPosition[2]^2 + Z^2)
 
             -- This is the derivative of the previous equation. This is required for newton's method.
-            azimuthDifferencePrime = 2 * E * EPrime * IV2 + EPrime * IV + E * (2 * DRAG * TERMINAL_VELOCITY[3] * (TERMINAL_VELOCITY[3] - initialVelocity[3])) - 2 * DRAG^2 * TERMINAL_VELOCITY[3] * Z
+            azimuthDifferencePrime = 2 * (DRAG * (E * IV + TERMINAL_VELOCITY[3] * (E1 * Z2 - DRAG * Z)))
 
             -- Newton's method. The next guess is equal to the first guess, offset in the direction the graph is going. This results in the next guess resulting in a number closer to 0 than the current one.
             predictedTime = predictedTime - azimuthDifference / azimuthDifferencePrime
@@ -102,11 +109,11 @@ function newtonMethodBallistics(initialVelocity, target, predictedTime)
             end
         end
     end
-    E = 1 - e^(-DRAG * predictedTime)
+    E1 = 1 - e^(-DRAG * predictedTime)
     return
         -- Compute elevation and azimuth angles based on the predictedTime
-        arcsin((DRAG * (target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E) + (TERMINAL_VELOCITY[3] - initialVelocity[3]) / MUZZLE_VELOCITY),
-        math.atan(DRAG * target.predictedPosition[2] / E - initialVelocity[2], DRAG * target.predictedPosition[1] / E - initialVelocity[1]),
+        arcsin((DRAG * (target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3])) / (MUZZLE_VELOCITY * E1) + Z2 / MUZZLE_VELOCITY),
+        math.atan(DRAG * target.predictedPosition[2] / E1 - initialVelocity[2], DRAG * target.predictedPosition[1] / E1 - initialVelocity[1]),
         predictedTime
 end
 ---@endsection
