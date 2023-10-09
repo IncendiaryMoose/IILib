@@ -72,19 +72,23 @@ end
 --- Even if the solver arrives at the mortar solution, the bullet will still hit.
 ---@param initialVelocity IIVector The velocity of the turret in world-space. The bullet will inherit this velocity when fired, so it needs to be accounted for.
 ---@param target table The target to hit. Must include a positionInTicks() function and a predictedPosition IIVector
----@param predictedTime number The predicted time, in ticks, that will pass between firing the bullet and hitting the target.
 ---@return number turretElevation The elevation, in world-space radians, of the turret that will be needed to hit the target. 0 is horizontal.
 ---@return number turretAzimuth The azimuth (yaw), in world-space radians, of the turret that will be needed to hit the target. 0 is east.
----@return number flightTime The predicted flight time of the bullet.
-function newtonMethodBallistics(initialVelocity, target, predictedTime)
-    local Z2, azimuthDifference, previousAzimuthDifference, azimuthDifferencePrime, E, E1, Z, IV
+---@return number predictedTime The predicted flight time of the bullet.
+function newtonMethodBallistics(initialVelocity, target)
+    local Z2, azimuthDifference, azimuthDifferencePrime, E, E1, Z, IV, predictedTime
     Z2 = TERMINAL_VELOCITY[3] - initialVelocity[3]
+
+    -- Make an initial guess for what time the bullet will hit the target.
+    -- This is done by dividing the distance by the muzzle velocity offset by the dot of the turret's velocity and the distance.
+    -- The solver uses Newton's method, so this guess only needs to be closer to the correct answer than the wrong one.
+    target:positionInTicks(0)
+    target.predictedPosition:setScale(1 / target.distance)
+    predictedTime = -IIlog(1 - DRAG * target.distance / (MUZZLE_VELOCITY + initialVelocity:dot(target.predictedPosition))) / DRAG
+
     for j = 1, 8 do
         -- Find where the target is probably going to be when the bullet lands
         target:positionInTicks(predictedTime)
-
-        -- Reset azimuthDifference to avoid false positive on the early return
-        azimuthDifference = 7
 
         -- Find what time the bullet will actually hit that location
         for i = 1, 5 do
@@ -93,7 +97,6 @@ function newtonMethodBallistics(initialVelocity, target, predictedTime)
             Z = target.predictedPosition[3] - predictedTime * TERMINAL_VELOCITY[3]
             IV = E1 * (MUZZLE_VELOCITY^2 - Z2^2 - initialVelocity[1]^2 - initialVelocity[2]^2) + 2 * DRAG * (target.predictedPosition[2] * initialVelocity[2] + target.predictedPosition[1] * initialVelocity[1] - Z * Z2)
 
-            previousAzimuthDifference = azimuthDifference
             -- This equation returns the difference between the azimuth angle calculated using the given time in the X-Z plane and the Y-Z plane.
             azimuthDifference = E1 * IV - DRAG^2 * (target.predictedPosition[1]^2 + target.predictedPosition[2]^2 + Z^2)
 
@@ -103,7 +106,7 @@ function newtonMethodBallistics(initialVelocity, target, predictedTime)
             -- Newton's method. The next guess is equal to the first guess, offset in the direction the graph is going. This results in the next guess resulting in a number closer to 0 than the current one.
             predictedTime = predictedTime - azimuthDifference / azimuthDifferencePrime
 
-            if predictedTime > LIFESPAN or predictedTime < 0 or IIabs(azimuthDifference) > IIabs(previousAzimuthDifference) then
+            if predictedTime > LIFESPAN or predictedTime < 0 then
                 -- The prediction system is not going to find a solution, so don't waste time trying.
                 return 0, 0, 0
             end
