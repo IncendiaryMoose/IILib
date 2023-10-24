@@ -8,8 +8,6 @@
 require('II_MathHelpers')
 require('II_SmallVectorMath')
 
-MAX_ATTEMPTS = 5
-MAX_STEPS = 5
 BARREL_LENGTH = property.getNumber('Barrel Length')
 WEAPON_TYPE = property.getNumber('Weapon Type')
 WEAPON_DATA = {

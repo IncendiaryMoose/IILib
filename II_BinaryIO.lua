@@ -79,8 +79,29 @@ end
 ---@param binary integer An integer containing the binary to encode.
 ---@return number encodedBinary A 32-bit float conaining the same binary as the input integer.
 function binaryToOutput(binary)
-    local exponent = binary >> 23 & 2^8 - 1
+    local exponent = binary >> 23 & 255
     return ((2^23 - 1 & binary) / 2^23 + (exponent > 0 and 1 or 0)) * 2 ^ IImax(exponent - 127, -126) * (binary < 1 << 31 ~ binary and 1 or -1)
+end
+---@endsection
+
+---@section safeBinaryToOutput
+---Converts a 31-bit integer into a 32-bit float for sending over composite
+---@param binary integer An integer containing the binary to encode.
+---@return number encodedBinary A 32-bit float containing the encoded integer
+function safeBinaryToOutput(binary)
+    local exponent = binary >> 23 & 2^7 - 1
+    return ((2^23 - 1 & binary) / 2^23 + (exponent > 0 and 1 or 0)) * 2 ^ IImax(exponent - 127, -126) * (binary < 1 << 30 ~ binary and 1 or -1)
+end
+---@endsection
+
+---@section safeInputToBinary
+---Decodes an input channel into a 31-bit integer.
+---@param channel integer The channel to read from.
+---@return integer binary The decoded integer.
+function safeInputToBinary(channel)
+    local float = input.getNumber(channel)
+    local exponent = IIfloor(IIlog(IIabs(float), 2) + 0.00000001) -- Very small offset is to fix rounding error.
+    return IIfloor(IIabs(float) * 2 ^ IImin(23 - exponent, 149) + 0.5) & 8388607 | IImax(exponent + 127, 0) << 23 | (1/float < 0 and 1 << 30 or 0)
 end
 ---@endsection
 
